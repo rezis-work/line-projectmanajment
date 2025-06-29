@@ -20,28 +20,28 @@ import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { useEffect, useState } from "react";
 import { AuthSkeleton } from "@/components/auth-skeleton";
-
-const formSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1, { message: "Password is required" }),
-});
+import { loginSchema } from "../schemas";
+import { useLogin } from "../api/use-login";
 
 export function SignInCard() {
+  const { mutate: login, isPending } = useLogin();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
     defaultValues: {
       email: "",
       password: "",
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const onSubmit = (values: z.infer<typeof loginSchema>) => {
+    login({
+      json: values,
+    });
     form.reset();
   };
 
@@ -66,6 +66,7 @@ export function SignInCard() {
                     <Input
                       type="email"
                       placeholder="Enter your Email"
+                      disabled={isPending}
                       {...field}
                     />
                   </FormControl>
@@ -82,6 +83,7 @@ export function SignInCard() {
                     <Input
                       type="password"
                       placeholder="Enter your Password"
+                      disabled={isPending}
                       {...field}
                     />
                   </FormControl>
@@ -90,12 +92,12 @@ export function SignInCard() {
               )}
             />
             <Button
-              disabled={false}
+              disabled={isPending}
               size={"lg"}
               className="w-full"
               type="submit"
             >
-              Login
+              {isPending ? "Logging in..." : "Login"}
             </Button>
           </form>
         </Form>

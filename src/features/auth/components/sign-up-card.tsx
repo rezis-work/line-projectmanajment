@@ -26,22 +26,19 @@ import { Input } from "@/components/ui/input";
 import { FcGoogle } from "react-icons/fc";
 import { FaGithub } from "react-icons/fa";
 import { AuthSkeleton } from "@/components/auth-skeleton";
-
-const formSchema = z.object({
-  name: z.string().min(1, { message: "Name is required" }),
-  email: z.string().email(),
-  password: z.string().min(1, { message: "Password is required" }),
-});
+import { registerSchema } from "../schemas";
+import { useRegister } from "../api/use_register";
 
 export function SignUpCard() {
+  const { mutate: register, isPending } = useRegister();
   const [isMounted, setIsMounted] = useState<boolean>(false);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -49,8 +46,10 @@ export function SignUpCard() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+  const onSubmit = (values: z.infer<typeof registerSchema>) => {
+    register({
+      json: values,
+    });
     form.reset();
   };
 
@@ -87,6 +86,7 @@ export function SignUpCard() {
                     <Input
                       type="name"
                       placeholder="Enter your Name"
+                      disabled={isPending}
                       {...field}
                     />
                   </FormControl>
@@ -103,6 +103,7 @@ export function SignUpCard() {
                     <Input
                       type="email"
                       placeholder="Enter your Email"
+                      disabled={isPending}
                       {...field}
                     />
                   </FormControl>
@@ -119,6 +120,7 @@ export function SignUpCard() {
                     <Input
                       type="password"
                       placeholder="Enter your Password"
+                      disabled={isPending}
                       {...field}
                     />
                   </FormControl>
@@ -128,7 +130,7 @@ export function SignUpCard() {
             />
 
             <Button
-              disabled={false}
+              disabled={isPending}
               size={"lg"}
               className="w-full"
               type="submit"
