@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RiAddCircleFill } from "react-icons/ri";
+import { Skeleton } from "./ui/skeleton";
 
 export function Projects() {
   const workspaceId = useWorkspaceId();
@@ -19,13 +20,17 @@ export function Projects() {
     return (
       <>
         <div className="flex items-center justify-center">
-          <p className="text-xs uppercase text-neutral-500 mr-2">Workspaces</p>
+          <p className="text-xs uppercase text-neutral-500 mr-2">Projects</p>
           <RiAddCircleFill
             onClick={open}
             className="size-5 text-neutral-500 cursor-pointer hover:opacity-75 transition"
           />
         </div>
-        <div>Loading...</div>;
+        <div className="flex flex-col gap-y-2">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        ;
       </>
     );
   }
@@ -34,13 +39,12 @@ export function Projects() {
     return (
       <>
         <div className="flex items-center justify-center">
-          <p className="text-xs uppercase text-neutral-500 mr-2">Workspaces</p>
+          <p className="text-xs uppercase text-neutral-500 mr-2">Projects</p>
           <RiAddCircleFill
             onClick={open}
             className="size-5 text-neutral-500 cursor-pointer hover:opacity-75 transition"
           />
         </div>
-        <div>No projects found</div>;
       </>
     );
   }
@@ -49,13 +53,17 @@ export function Projects() {
     return (
       <>
         <div className="flex items-center justify-center">
-          <p className="text-xs uppercase text-neutral-500 mr-2">Workspaces</p>
+          <p className="text-xs uppercase text-neutral-500 mr-2">Projects</p>
           <RiAddCircleFill
             onClick={open}
             className="size-5 text-neutral-500 cursor-pointer hover:opacity-75 transition"
           />
         </div>
-        <div>No projects found</div>
+        <div className="flex flex-col items-center justify-center gap-y-2">
+          <p className="text-xs text-neutral-500 text-center mt-5">
+            No projects found
+          </p>
+        </div>
       </>
     );
   }
@@ -70,7 +78,7 @@ export function Projects() {
         />
       </div>
       {projects.documents.map((project) => {
-        const href = `/workspace/${workspaceId}/project/${project.$id}`;
+        const href = `/workspaces/${workspaceId}/project/${project.$id}`;
         const isActive = pathname === href;
 
         return (
