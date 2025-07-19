@@ -43,6 +43,10 @@ const app = new Hono()
         return c.json({ message: "Unauthorized" }, 401);
       }
 
+      if (!workspaceId) {
+        return c.json({ message: "Workspace ID is required" }, 400);
+      }
+
       const query = [
         Query.equal("workspaceId", workspaceId),
         Query.orderDesc("createdAt"),
