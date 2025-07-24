@@ -7,16 +7,33 @@ import { Loader, PlusIcon } from "lucide-react";
 import { useCreateTaskModal } from "../hooks/use-create-task-modal";
 import { useWorkspaceId } from "@/features/workspaces/hooks/use-workspace-id";
 import { useGetTask } from "../api/use-get-task";
+import { DataFilters } from "./data-filters";
+import { useTaskFilters } from "../hooks/use-task-filters";
+import { useQueryState } from "nuqs";
+import { DataTable } from "./data-table";
+import { columns } from "./columns";
 
 export function TaskViewSwitcher() {
+  const [{ projectId, status, assigneeId, search, dueDate }] = useTaskFilters();
+  const [view, setView] = useQueryState("task-view", {
+    defaultValue: "table",
+  });
   const { open } = useCreateTaskModal();
   const workspaceId = useWorkspaceId();
   const { data: tasks, isLoading: isLoadingTasks } = useGetTask({
     workspaceId,
+    status,
+    assigneeId,
+    projectId,
+    dueDate,
+    search,
   });
-  console.log(tasks);
   return (
-    <Tabs className="flex-1 w-full border rounded-lg">
+    <Tabs
+      defaultValue={view}
+      onValueChange={setView}
+      className="flex-1 w-full border rounded-lg"
+    >
       <div className="h-full flex flex-col overflow-auto p-4">
         <div className="flex flex-col gap-y-2 lg:flex-row justify-between items-center">
           <TabsList className="w-full lg:w-auto">
@@ -36,7 +53,7 @@ export function TaskViewSwitcher() {
           </Button>
         </div>
         <DottedSeparator className="my-4" />
-        Data Filters
+        <DataFilters />
         <DottedSeparator className="my-4" />
         {isLoadingTasks ? (
           <div className="w-full border rounded-lg h-[200px] flex items-center justify-center">
@@ -45,7 +62,7 @@ export function TaskViewSwitcher() {
         ) : (
           <>
             <TabsContent value="table" className="mt-0">
-              {JSON.stringify(tasks)}
+              <DataTable columns={columns} data={tasks?.documents ?? []} />
             </TabsContent>
             <TabsContent value="kanban" className="mt-0">
               {JSON.stringify(tasks)}
