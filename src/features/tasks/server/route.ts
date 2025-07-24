@@ -11,6 +11,31 @@ import { createAdminClient } from "@/lib/appwrite";
 import { Project } from "@/features/projects/types";
 
 const app = new Hono()
+  .delete("/:taskId", sessionMiddleware, async (c) => {
+    const user = c.get("user");
+    const databases = c.get("databases");
+    const { taskId } = c.req.param();
+
+    const task = await databases.getDocument<Task>(
+      DATABASE_ID,
+      TASKS_ID,
+      taskId
+    );
+
+    const member = await getMember({
+      databases,
+      workspaceId: task.workspaceId,
+      userId: user.$id,
+    });
+
+    if (!member) {
+      return c.json({ message: "Unauthorized" }, 401);
+    }
+
+    await databases.deleteDocument(DATABASE_ID, TASKS_ID, taskId);
+
+    return c.json({ data: { $id: task.$id } });
+  })
   .get(
     "/",
     sessionMiddleware,
@@ -148,6 +173,10 @@ const app = new Hono()
       const { name, status, workspaceId, projectId, dueDate, assigneeId } =
         c.req.valid("json");
 
+      if (!workspaceId) {
+        return c.json({ message: "Workspace ID is required" }, 400);
+      }
+
       const member = await getMember({
         databases,
         workspaceId,
@@ -190,6 +219,77 @@ const app = new Hono()
       );
 
       return c.json({ data: task });
+    }
+  )
+  .post(
+    "/bulk-update",
+    sessionMiddleware,
+    zValidator(
+      "json",
+      z.object({
+        tasks: z.array(
+          z.object({
+            $id: z.string(),
+            status: z.nativeEnum(TaskStatus),
+            position: z.number(),
+          })
+        ),
+      })
+    ),
+    async (c) => {
+      const databases = c.get("databases");
+      const user = c.get("user");
+      const { tasks } = c.req.valid("json");
+
+      const tasksToUpdate = await databases.listDocuments<Task>(
+        DATABASE_ID,
+        TASKS_ID,
+        [
+          Query.contains(
+            "$id",
+            tasks.map((task) => task.$id)
+          ),
+        ]
+      );
+
+      const workspaceIds = new Set(
+        tasksToUpdate.documents.map((task) => task.workspaceId)
+      );
+
+      if (workspaceIds.size !== 1) {
+        return c.json(
+          { message: "Tasks must belong to the same workspace" },
+          400
+        );
+      }
+
+      const workspaceId = workspaceIds.values().next().value;
+
+      if (!workspaceId) {
+        return c.json({ message: "Workspace ID is required" }, 400);
+      }
+
+      const member = await getMember({
+        databases,
+        workspaceId,
+        userId: user.$id,
+      });
+
+      if (!member) {
+        return c.json({ message: "Unauthorized" }, 401);
+      }
+
+      const updatedTasks = await Promise.all(
+        tasks.map(async (task) => {
+          const { $id, status, position } = task;
+          return databases.updateDocument<Task>(DATABASE_ID, TASKS_ID, $id, {
+            status,
+            position,
+          });
+        })
+      );
+
+      return c.json({ data: updatedTasks });
     }
   );
 
